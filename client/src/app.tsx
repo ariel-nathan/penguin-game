@@ -1,62 +1,48 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import GameCanvas from "./components/game-canvas";
 import { socket } from "./lib/socket";
 
 export default function App() {
-  const [isConnected, setIsConnected] = useState(socket.connected);
-  const [messages, setMessages] = useState<string[]>([]);
+  const [username, setUsername] = useState("");
+  const [connected, setConnected] = useState(false);
 
-  function connect() {
+  function connect(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     socket.connect();
+    setConnected(true);
   }
 
-  function disconnect() {
+  function disconnect(e: React.MouseEvent<HTMLButtonElement>) {
+    e.preventDefault();
     socket.disconnect();
+    setConnected(false);
   }
-
-  useEffect(() => {
-    function onConnect() {
-      setIsConnected(true);
-    }
-
-    function onDisconnect() {
-      setIsConnected(false);
-    }
-
-    function onMessage(value: string) {
-      setMessages((previous) => [...previous, value]);
-    }
-
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-    socket.on("message", onMessage);
-
-    return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-      socket.off("message", onMessage);
-    };
-  }, []);
 
   return (
-    <div className="grow space-y-4">
-      <h1 className="text-3xl font-semibold">Penguin Game</h1>
-      <p>Connected: {"" + isConnected}</p>
-      <div className="space-x-2">
-        <button onClick={connect} className="rounded border p-1">
-          Connect
-        </button>
-        <button onClick={disconnect} className="rounded border p-1">
+    <div className="flex grow flex-col items-center justify-center space-y-4">
+      <GameCanvas username={username} />
+      {connected ? (
+        <button onClick={disconnect} className="border border-black p-1">
           Disconnect
         </button>
-      </div>
-      <div className="space-y-2">
-        <h2>Messages:</h2>
-        <ul>
-          {messages.map((message, index) => (
-            <li key={index}>{message}</li>
-          ))}
-        </ul>
-      </div>
+      ) : (
+        <form onSubmit={connect} className="space-x-2">
+          <input
+            type="text"
+            placeholder="username"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            className="border border-black p-1"
+          />
+          <button
+            type="submit"
+            disabled={!username}
+            className="border border-black p-1 disabled:opacity-50"
+          >
+            Connect
+          </button>
+        </form>
+      )}
     </div>
   );
 }
